@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
-const { notFound, errorHandler } = require('./errors');
+const { notFound, errorHandler } = require('./utils/errors');
 
 const app = express();
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

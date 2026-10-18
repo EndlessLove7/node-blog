@@ -1,5 +1,5 @@
 const app = require('./src/app');
-const prisma = require('./src/db');
+const prisma = require('./src/repository/prisma');
 const { PORT } = require('./src/config');
 
 let server;

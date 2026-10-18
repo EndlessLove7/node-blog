@@ -64,18 +64,35 @@
 │       ├── App.jsx           # 页面、登录、文章浏览与编辑
 │       └── style.css         # 响应式界面样式
 ├── src/
-│   ├── app.js                # Express 应用、中间件、API 路由和生产前端托管
-│   ├── config.js             # 读取并校验 .env 配置
-│   ├── db.js                 # Prisma Client 实例
-│   ├── errors.js             # 统一错误类型、异步处理和错误响应
+│   ├── app.js                # Express 应用、中间件和生产前端托管
+│   ├── config/
+│   │   └── index.js          # 读取并校验 .env 配置
+│   ├── controller/           # 接收请求参数并组织 HTTP 响应
+│   │   ├── authController.js
+│   │   ├── articleController.js
+│   │   ├── uploadController.js
+│   │   └── todoController.js
 │   ├── middleware/
 │   │   ├── auth.js           # JWT 鉴权
 │   │   └── validate.js       # Zod 参数校验
-│   └── routes/
-│       ├── auth.js           # 注册、登录、当前用户
-│       ├── articles.js       # 文章列表、详情、新增、修改、删除
-│       ├── upload.js         # 封面图片上传
-│       └── todos.js          # 旧的 JSON 文件 TODO 接口
+│   ├── routes/
+│   │   ├── auth.js           # 用户路由与请求参数校验
+│   │   ├── articles.js       # 文章路由与请求参数校验
+│   │   ├── upload.js         # 封面上传路由
+│   │   └── todos.js          # TODO 路由与请求参数校验
+│   ├── repository/           # 数据访问与持久化
+│   │   ├── prisma.js         # Prisma Client 实例
+│   │   ├── userRepository.js
+│   │   ├── articleRepository.js
+│   │   ├── todoRepository.js
+│   │   └── uploadRepository.js
+│   ├── service/              # 用户、文章、TODO、上传业务逻辑
+│   │   ├── authService.js
+│   │   ├── articleService.js
+│   │   ├── todoService.js
+│   │   └── uploadService.js
+│   └── utils/
+│       └── errors.js         # 统一错误类型、异步处理和错误响应
 ├── prisma/
 │   ├── schema.prisma         # User、Article 数据模型
 │   └── migrations/           # 数据库迁移记录
@@ -91,15 +108,13 @@
 ```text
 http-server.js
   ├─ 引入 src/app.js
-  │    ├─ 引入配置、中间件
-  │    └─ 加载各业务路由
-  │         ├─ 用户路由 ─────┐
-  │         ├─ 文章路由 ─────┼──> src/db.js ──> Prisma Client ──> MySQL
-  │         └─ 鉴权中间件 ───┘
-  ├─ 引入 src/db.js
+  │    ├─ 注册中间件与各业务路由
+  │    └─ 路由 -> 控制器 -> 服务 -> 仓储
+  ├─ 引入 src/repository/prisma.js
   ├─ prisma.$connect()       连接数据库
   └─ app.listen(...)         启动 HTTP 服务
 ```
+`routes/` 负责接口路径、参数校验与中间件编排；`controller/` 处理 HTTP 请求和响应；`service/` 承载业务逻辑；`repository/` 封装数据库及文件访问。鉴权和参数校验由 `middleware/` 处理，环境配置和通用错误处理分别位于 `config/`、`utils/`。
 `test/http-server.js` 是旧服务备份，不是当前启动入口。博客前端现在位于 `client/`；`test/` 中的 HTML/JavaScript 是原有学习文件，不属于博客页面。
 
 ## 本机安装与启动

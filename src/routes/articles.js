@@ -1,7 +1,6 @@
 const express = require('express');
 const { z } = require('zod');
-const prisma = require('../db');
-const { AppError, asyncHandler } = require('../errors');
+const articleController = require('../controller/articleController');
 const { authenticate } = require('../middleware/auth');
 const { validate, requireJsonObject } = require('../middleware/validate');
 
@@ -34,73 +33,17 @@ const updateSchema = createSchema.partial().refine(
   '至少提供一个需要修改的字段',
 );
 
-router.get('/', validate(listSchema, 'query'), asyncHandler(async (req, res) => {
-  const { page, pageSize, keyword, order } = req.validated.query;
-  const where = keyword
-    ? { OR: [{ title: { contains: keyword } }, { content: { contains: keyword } }] }
-    : {};
-  const [items, total] = await Promise.all([
-    prisma.article.findMany({
-      where,
-      orderBy: [{ createdAt: order }, { id: order }],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: { author: { select: { id: true, username: true } } },
-    }),
-    prisma.article.count({ where }),
-  ]);
-  res.json({
-    code: 0,
-    data: { items, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } },
-    msg: '获取成功',
-  });
-}));
-
-router.get('/:id', validate(idSchema, 'params'), asyncHandler(async (req, res) => {
-  const { id } = req.validated.params;
-  const article = await prisma.article.findUnique({
-    where: { id },
-    include: { author: { select: { id: true, username: true } } },
-  });
-  if (!article) {
-    throw new AppError(404, '文章不存在');
-  }
-  res.json({ code: 0, data: article, msg: '获取成功' });
-}));
-
-router.post('/', authenticate, requireJsonObject, validate(createSchema), asyncHandler(async (req, res) => {
-  const article = await prisma.article.create({
-    data: { ...req.validated.body, userId: req.user.id },
-    include: { author: { select: { id: true, username: true } } },
-  });
-  res.status(201).json({ code: 0, data: article, msg: '创建成功' });
-}));
-
-router.patch('/:id', authenticate, validate(idSchema, 'params'), requireJsonObject, validate(updateSchema), asyncHandler(async (req, res) => {
-  const { id } = req.validated.params;
-  const result = await prisma.article.updateMany({
-    where: { id, userId: req.user.id },
-    data: req.validated.body,
-  });
-  if (result.count === 0) {
-    throw new AppError(404, '文章不存在或无权修改');
-  }
-  const article = await prisma.article.findUnique({
-    where: { id },
-    include: { author: { select: { id: true, username: true } } },
-  });
-  res.json({ code: 0, data: article, msg: '更新成功' });
-}));
-
-router.delete('/:id', authenticate, validate(idSchema, 'params'), asyncHandler(async (req, res) => {
-  const { id } = req.validated.params;
-  const result = await prisma.article.deleteMany({
-    where: { id, userId: req.user.id },
-  });
-  if (result.count === 0) {
-    throw new AppError(404, '文章不存在或无权删除');
-  }
-  res.json({ code: 0, data: { id }, msg: '删除成功' });
-}));
+router.get('/', validate(listSchema, 'query'), articleController.list);
+router.get('/:id', validate(idSchema, 'params'), articleController.getById);
+router.post('/', authenticate, requireJsonObject, validate(createSchema), articleController.create);
+router.patch(
+  '/:id',
+  authenticate,
+  validate(idSchema, 'params'),
+  requireJsonObject,
+  validate(updateSchema),
+  articleController.update,
+);
+router.delete('/:id', authenticate, validate(idSchema, 'params'), articleController.remove);
 
 module.exports = router;

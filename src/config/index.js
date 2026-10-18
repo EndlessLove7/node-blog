@@ -2,7 +2,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const { z } = require('zod');
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
@@ -19,5 +19,5 @@ if (!parsed.success) {
 
 module.exports = {
   ...parsed.data,
-  uploadDir: path.resolve(__dirname, '..', parsed.data.UPLOAD_DIR),
+  uploadDir: path.resolve(__dirname, '..', '..', parsed.data.UPLOAD_DIR),
 };
