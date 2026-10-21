@@ -97,9 +97,6 @@
 │   ├── schema.prisma         # User、Article 数据模型
 │   └── migrations/           # 数据库迁移记录
 ├── uploads/                  # 上传的图片文件
-├── test/                     # 创建博客 API 前的原有学习文件和服务备份
-│   ├── http-server.js        # 改写前的纯 Node.js TODO 服务备份
-│   └── data.json             # 原 TODO 数据，当前 TODO API 继续读写此文件
 ├── .env.example              # 环境变量示例，不含真实密码
 └── README.md                 # 本说明文件
 ```
@@ -115,7 +112,7 @@ http-server.js
   └─ app.listen(...)         启动 HTTP 服务
 ```
 `routes/` 负责接口路径、参数校验与中间件编排；`controller/` 处理 HTTP 请求和响应；`service/` 承载业务逻辑；`repository/` 封装数据库及文件访问。鉴权和参数校验由 `middleware/` 处理，环境配置和通用错误处理分别位于 `config/`、`utils/`。
-`test/http-server.js` 是旧服务备份，不是当前启动入口。博客前端现在位于 `client/`；`test/` 中的 HTML/JavaScript 是原有学习文件，不属于博客页面。
+原有练习文件和旧 HTTP 服务已移出项目目录，保存在同级的 `../node-test/`；博客前端位于 `client/`。兼容用的 TODO 接口数据也保存在 `../node-test/data.json`，不会混入博客项目源码。
 
 ## 本机安装与启动
 
@@ -148,6 +145,20 @@ http-server.js
    ```
 
    然后访问 `http://127.0.0.1:3000/`。前端构建文件位于 `client/dist/`，不需要单独部署第二个 Web 服务。
+
+### 使用 PM2 管理生产进程
+
+安装 PM2 后，可从项目根目录启动生产进程：
+
+```sh
+npm install --global pm2
+npm run build:client
+pm2 start ecosystem.config.js --env production
+pm2 status
+pm2 logs node-blog
+```
+
+配置位于根目录的 `ecosystem.config.js`，以单个 cluster worker 启动服务，启用异常自动重启、内存上限和优雅关闭。部署新版本后可运行 `pm2 reload ecosystem.config.js --env production`；服务器重启后自动恢复可运行 `pm2 save` 与 `pm2 startup`，并按命令提示配置启动服务。
 
 其他脚本：
 
@@ -216,10 +227,6 @@ Authorization: Bearer <登录返回的 token>
 | `POST` | `/api/upload/cover` | 是 | 使用 `multipart/form-data` 上传图片，表单字段名为 `file` |
 
 上传成功后，响应的 `data.url` 可填入文章的 `coverImageUrl`。图片通过 `/uploads/<文件名>` 访问。这里使用本地文件夹保存，尚未接入云对象存储。
-
-### 原 TODO 接口
-
-`GET|POST /todos` 和 `PUT|DELETE /todos/:id` 仍可使用，数据保存在 `test/data.json`。这是之前学习项目的兼容接口，不属于博客文章数据库模型。
 
 ## 开发提示
 
